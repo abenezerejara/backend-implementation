@@ -1,0 +1,33 @@
+body,html{
+  margin: 0;
+  padding: 0;
+}
+
+.input-buttons{
+  padding: 10px;
+}
+
+.firstname{
+  padding: 3px;
+  margin-bottom: 12px ;
+}
+
+.lastname{
+  padding: 3px;
+  margin-bottom: 12px;
+}
+
+.save-button{
+  width: 100px;
+  background-color: green;
+}
+
+.delete-button{
+  width: 100px;
+  margin-left: 15px;
+  background-color: red;
+}
+
+.table{
+  padding: 5px;
+}
