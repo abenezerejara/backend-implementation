@@ -1,9 +1,12 @@
-import { Button, Table, Input } from 'antd'
+import { Button, Table, Input, Switch } from 'antd'
 import './App.css'
 import { useState, useEffect } from 'react';
 import { createStudent, fetchStudents } from './apiService';
 
 function App() {
+  const [isListening, setIsListening] = useState(false);
+  const [webSocket, setWebSocket] = useState(null);
+
   //state for  saving the firstname
   const [firstname, setfirstname] = useState('')
   //state for saving the lastname
@@ -41,7 +44,51 @@ function App() {
     fetchData();
   }, []);
 
+  //TOGGLE FEATURE:
+  const sendToTarget =  async (data) => {
+    console.log('Sending to target:', data);
+    // Add logic to send the data to the target application
+    await createStudent(data);
+  };
 
+  useEffect(() => {
+    let ws;
+
+    if (isListening) {
+        // Connect to the WebSocket server
+        ws = new WebSocket('ws://localhost:3001');
+
+        ws.onopen = () => {
+            console.log('WebSocket connection established');
+        };
+
+        ws.onmessage = (event) => {
+            const data = JSON.parse(event.data);
+            console.log('Data received from WebSocket:', data);
+
+            // Call the sendToTarget function
+            sendToTarget(data);
+        };
+
+        ws.onclose = () => {
+            console.log('WebSocket connection closed');
+        };
+
+        setWebSocket(ws);
+    }
+
+     // Cleanup WebSocket on component unmount or when listening is turned off
+    return () => {
+      if (ws) {
+        ws.close();
+      }
+      setWebSocket(null);
+    };
+  }, [isListening]);
+
+  const handleToggle = (checked) => {
+    setIsListening(checked);
+  };
 
   function handleDelete() {
     console.log('Deleted!!');
@@ -55,7 +102,16 @@ function App() {
 
   return (
     <>
-  
+      <div>
+        <h1>Webhook Listener</h1>
+        <Switch
+          checked={isListening}
+          onChange={handleToggle}
+          checkedChildren="Listening"
+          unCheckedChildren="Stopped"
+        />
+      </div>
+
      <div className='input-buttons'>
      <h3>Enter Student first and last name.</h3>
       <Input className='firstname' placeholder='Input First Name' onChange={(e) => setfirstname(e.target.value)}/>

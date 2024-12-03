@@ -1,5 +1,8 @@
 import express from 'express';
 import cors from 'cors';
+import { createServer } from 'http';
+import WebSocket from 'ws';
+import { WebSocketServer } from 'ws';
 import {fetchStudents, saveStudents, deleteStudents} from './firebaseService.js';
 
 const port = 3000;
@@ -7,6 +10,23 @@ const app = express();
 
 app.use(cors());
 app.use(express.json());
+
+//Creat an HTTP server to use with WebSocket
+const server = createServer(app);
+const wss = new WebSocketServer({ server });
+
+let connectedClients = [];
+// Handle WebSocket connections
+wss.on('connection', (ws) => {
+    console.log('WebSocket client connected');
+    connectedClients.push(ws);
+
+    ws.on('close', () => {
+        console.log('WebSocket client disconnected');
+        connectedClients = connectedClients.filter(client => client !== ws);
+    });
+});
+
 
 app.get('/', (req, res) => {
     res.send("Hello World!")
@@ -49,6 +69,25 @@ app.delete('/Students/:id', async (req, res) => {
     }
 })
 
+// Endpoint to receive webhook events
+app.post('/webhook', (req, res) => {
+    console.log('Webhook data received:', req.body);
+
+    // Broadcast to WebSocket clients
+    connectedClients.forEach((client) => {
+        if (client.readyState === WebSocket.OPEN) {
+            client.send(JSON.stringify(req.body)); // Push data to React frontend
+        }
+    });
+
+    res.sendStatus(200); // Acknowledge receipt of the webhook
+});
+
+// Start the server
+const PORT = 3001;
+server.listen(PORT, () => {
+    console.log(`Server is running on port ${PORT}`);
+});
 
 app.listen(port, () => {
     console.log(`Example app listening on port ${port}`)
